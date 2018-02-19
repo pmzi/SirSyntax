@@ -37,12 +37,6 @@ class UserDBHandler{
 
     }
 
-    _addToFile(chaId,userName){
-
-        
-
-    }
-
     _save(){
 
         fs.writeFileSync("db/users.json",JSON.stringify(this.users));
