@@ -56,4 +56,6 @@ typings/
 
 # dotenv environment variables file
 .env
-
+db/votes.json
+db/users.json
+config/config.js
