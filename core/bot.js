@@ -92,7 +92,7 @@ class Bot {
 
         this.bot.onText(/درباره ما/, (msg) => {
 
-            this.bot.sendMessage(msg.chat.id,fs.readFileSync("./config/about.txt"))
+            this.bot.sendMessage(msg.chat.id,fs.readFileSync("./config/about.md"),{parse_mode:"Markdown"})
 
         })
 
@@ -296,7 +296,7 @@ class Bot {
 
             text += "<pre>"
 
-            text += "\n\n برای دادن نظر یا مشاهده ی نظر به برروی گزینه مود نظر خود در کیبور کلیک نمایید سپس به " +
+            text += "\n\n برای دادن نظر یا مشاهده ی نظر برروی گزینه مورد نظر خود در کیبورد کلیک نمایید سپس به " +
                 "گروه مربوطه بروید و برروی استاد کلیک نمایید.";
 
             text += "</pre>";
