@@ -6,6 +6,8 @@ const TeacherDBHandler = require("./TeacherDBHandler");
 
 const VoteDBHandler = require("./VoteDBHandler");
 
+const NewTeacherDBHandler = require("./NewTeacherDBHandler");
+
 const questions = require('../config/questions');
 
 class Bot {
@@ -21,6 +23,8 @@ class Bot {
         this.TeacherDBHandler = new TeacherDBHandler();
 
         this.VoteDBHandler = new VoteDBHandler();
+
+        this.NewTeacherDBHandler = new NewTeacherDBHandler();
 
         this.questions = questions;
 
@@ -61,11 +65,13 @@ class Bot {
 
         this.bot.onText(/پیشنهاد افزودن استاد/, (msg) => {
 
-            this.bot.sendMessage(msg.chat.id, "BITCH")
+            this.sendCats(msg.chat.id,3);
 
         })
 
         this.bot.onText(/درباره ما/, (msg) => {
+
+            console.log(msg);
 
             this.bot.sendMessage(msg.chat.id, "BITCH")
 
@@ -74,6 +80,9 @@ class Bot {
         //////
 
         this.bot.on("callback_query", response => {
+
+            //deleting bot's message
+            this.bot.deleteMessage(response.message.chat.id,response.message.message_id);
 
             if (/cat-get-\d+/i.test(response.data)) {
 
@@ -96,6 +105,14 @@ class Bot {
                 let catId = parseInt(result[1]);
 
                 this.sendTeachers(response.message.chat.id, catId, response.id, 2);
+            }else if (/cat-newTeacher-\d+/i.test(response.data)) {
+
+                let result = /cat-newTeacher-(\d)+/i.exec(response.data);
+
+                let catId = parseInt(result[1]);
+
+                this.addNewTeacher(catId,response.message.chat.id)
+
             } else if (/teacher-vote-\d+/i.test(response.data)) {
 
                 let result = /teacher-vote-(\d)+/i.exec(response.data);
@@ -113,8 +130,6 @@ class Bot {
                 }
 
             } else if (/\d+-question-\d+-\d+/i.test(response.data)) {
-
-                console.log("ss");
 
                 let result = /(\d+)-question-(\d+)-(\d+)/i.exec(response.data);
 
@@ -140,7 +155,7 @@ class Bot {
 
     }
 
-    sendCats(chatId, type = 1) { // type = 2 --> vote
+    sendCats(chatId, type = 1) { // type = 2 --> vote, type = 3 --> add teacher request
 
         let prefix = "-get";
 
@@ -148,6 +163,8 @@ class Bot {
 
             prefix = "-vote";
 
+        }else if(type == 3){
+            prefix = "-newTeacher";
         }
 
         let keyboards = this._createKeyboardFromObject(this.TeacherDBHandler.cats, "cat" + prefix);
@@ -207,6 +224,40 @@ class Bot {
             reply_markup: {
                 inline_keyboard: keyboards
             }
+        });
+
+    }
+
+    addNewTeacher(catId,chatId){
+
+        this.bot.sendMessage(chatId,"با reply کردن این پیام، نام استاد را بنویسید.").then((msg)=>{
+
+            this.bot.onReplyToMessage(chatId,msg.message_id,(response)=>{
+
+                let name = response.text;
+
+                if(!this.TeacherDBHandler._checkTeacherExistance(name,catId)){
+                    console.log("a")
+                    if(this.NewTeacherDBHandler.addTecher(name,catId,chatId)){
+                        console.log("b")
+                        this.bot.sendMessage(chatId,"استاد پس از تایید، ثبت خواهد شد. \n با تشکر از همکاری شما.")
+
+                    }else{
+                        console.log("c")
+                        this.bot.sendMessage(chatId,"این بات در لیست انتظار افزوده شدن می باشد.");
+
+                    }
+
+                }else{
+                    console.log("d")
+                    this.bot.sendMessage(chatId,"این استاد در حال حاضر در بات می باشد.");
+
+                }
+
+            });
+
+
+
         });
 
     }

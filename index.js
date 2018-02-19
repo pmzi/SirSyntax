@@ -4,4 +4,4 @@ const Bot = require("./core/bot");
 
 //Let's Begin:)
 
-let bot = new Bot(config.API);
+const bot = new Bot(config.API);

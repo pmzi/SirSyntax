@@ -56,5 +56,4 @@ typings/
 
 # dotenv environment variables file
 .env
-db/teachers.json
-db/users.json
+.idea

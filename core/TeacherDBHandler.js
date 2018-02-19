@@ -38,14 +38,13 @@ class TeacherDBHandler{
 
     _save(){
 
-        fs.writeFileSync("db/teachers.json",JSON.stringify(this.users));
+        fs.writeFileSync("db/teachers.json",JSON.stringify(this.teachers));
 
     }
 
     _checkTeacherExistance(name,cat){
         name = name.trim();
-        cat = cat.trim();
-        let teacher = this.users.filter(teacher=>teacher.name == name && teacher.cat == cat);
+        let teacher = this.teachers.filter(teacher=>teacher.name == name && teacher.cat == cat);
         if(teacher.length>=1){
             return true;
         }
