@@ -63,7 +63,7 @@ class VoteDBHandler {
     parseVote(votes, teacherName) {
 
         if(votes.length == 0){
-            return "نظری برای مشاهده وجود دارد.";
+            return "نظری برای مشاهده وجود ندارد.";
         }
 
         let sum = [];
@@ -84,6 +84,8 @@ class VoteDBHandler {
             sum[item] /= votes.length;
             sum[item] = sum[item].toFixed(2);
         }
+
+        console.log(votes.length);
 
         let standards = {};
         i = 0;

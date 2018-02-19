@@ -18,6 +18,20 @@ class TeacherDBHandler{
 
     }
 
+    search(name){
+
+        let regex = new RegExp(name);
+
+        let filter = this.teachers.filter(item=>regex.test(item.name));
+
+        for(let item of filter){
+            item.catName = this._catNameFromId(item.cat);
+        }
+
+        return filter;
+
+    }
+
     getTeacherNameById(id){
         return this.teachers.filter(item=>item.id == id)[0].name;
     }
@@ -43,6 +57,10 @@ class TeacherDBHandler{
             return true;
         }
         return false;
+    }
+
+    _catNameFromId(id){
+        return this.cats.filter(item=>item.id == id)[0].name;
     }
 
 }

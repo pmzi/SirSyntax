@@ -30,6 +30,14 @@ class Bot {
 
         this.questions = questions;
 
+        // inline keyboard
+
+        this.keyboard = [
+            ["مشاهده اساتید", "نظر دادن به اساتید"],
+            ["پیشنهاد افزودن استاد","جستجوی استاد"],
+            ["درباره ما"]
+        ];
+
         this.initializeCommands();
 
     }
@@ -42,11 +50,7 @@ class Bot {
 
                 this.bot.sendMessage(msg.chat.id, "به بات SirSyntax خوش امدید!", {
                     reply_markup: {
-                        "keyboard": [
-                            ["مشاهده اساتید", "نظر دادن به اساتید"],
-                            ["پیشنهاد افزودن استاد"],
-                            ["درباره ما"]
-                        ]
+                        "keyboard": this.keyboard
                     }
                 })
             });
@@ -71,6 +75,21 @@ class Bot {
 
         })
 
+        this.bot.onText(/جستجوی استاد/, (msg) => {
+
+            this.bot.sendMessage(msg.chat.id,"با reply کردن این متن نام استاد را بنویسید.").then((response)=>{
+
+                this.bot.onReplyToMessage(msg.chat.id,response.message_id,(userResponse)=>{
+
+                    let result = this.TeacherDBHandler.search(userResponse.text);
+
+                    this.showSearchResults(result,userResponse.text,userResponse.chat.id);
+
+                })
+            });
+
+        })
+
         this.bot.onText(/درباره ما/, (msg) => {
 
             this.bot.sendMessage(msg.chat.id,fs.readFileSync("./config/about.txt"))
@@ -86,7 +105,7 @@ class Bot {
 
             if (/cat-get-\d+/i.test(response.data)) {
 
-                let result = /cat-get-(\d)+/i.exec(response.data);
+                let result = /cat-get-(\d+)/i.exec(response.data);
 
                 let catId = parseInt(result[1]);
 
@@ -94,20 +113,22 @@ class Bot {
 
             } else if (/teacher-get-\d+/i.test(response.data)) {
 
-                let result = /teacher-get-(\d)+/i.exec(response.data);
+                let result = /teacher-get-(\d+)/i.exec(response.data);
 
                 let teacherId = parseInt(result[1]);
 
                 this.sendResult(response.message.chat.id, teacherId, response.id);
+
             } else if (/cat-vote-\d+/i.test(response.data)) {
-                let result = /cat-vote-(\d)+/i.exec(response.data);
+                let result = /cat-vote-(\d+)/i.exec(response.data);
 
                 let catId = parseInt(result[1]);
 
                 this.sendTeachers(response.message.chat.id, catId, response.id, 2);
+
             }else if (/cat-newTeacher-\d+/i.test(response.data)) {
 
-                let result = /cat-newTeacher-(\d)+/i.exec(response.data);
+                let result = /cat-newTeacher-(\d+)/i.exec(response.data);
 
                 let catId = parseInt(result[1]);
 
@@ -115,7 +136,7 @@ class Bot {
 
             } else if (/teacher-vote-\d+/i.test(response.data)) {
 
-                let result = /teacher-vote-(\d)+/i.exec(response.data);
+                let result = /teacher-vote-(\d+)/i.exec(response.data);
 
                 let teacherId = parseInt(result[1]);
 
@@ -204,7 +225,11 @@ class Bot {
 
         let parsedVote = this.VoteDBHandler.parseVote(teacherVote, this.TeacherDBHandler.getTeacherNameById(teacherId));
 
-        this.bot.sendMessage(chatId, parsedVote);
+        this.bot.sendMessage(chatId, parsedVote,{
+            reply_markup: {
+                "keyboard": this.keyboard
+            }
+        });
 
         this.bot.answerCallbackQuery(callBackId);
 
@@ -255,6 +280,36 @@ class Bot {
 
 
         });
+
+    }
+
+    showSearchResults(result,keyword,chatId){
+
+        let text = "";
+
+        if(result.length!=0){
+            text = "نتایج جستجوی "+keyword;
+
+            for(let item of result){
+                text += "\n\n" + item.name + " در گروه: " + item.catName;
+            }
+
+            text += "<pre>"
+
+            text += "\n\n برای دادن نظر یا مشاهده ی نظر به برروی گزینه مود نظر خود در کیبور کلیک نمایید سپس به " +
+                "گروه مربوطه بروید و برروی استاد کلیک نمایید.";
+
+            text += "</pre>";
+
+        }else{
+
+            text = "متاسفانه نتیجه ای یافت نشد. اگر استاد مدنظر خود را نیافتید، در قسمت `پیشنهاد افزودن استاد` به ما اعلام کنید.";
+
+        }
+
+        text += "\n\n @SirSyntaxBot";
+
+        this.bot.sendMessage(chatId,text,{parse_mode : "HTML"});
 
     }
 
