@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const TelegramBot = require('node-telegram-bot-api');
 
 const UserDBHandler = require("./UserDBHandler");
@@ -71,9 +73,7 @@ class Bot {
 
         this.bot.onText(/درباره ما/, (msg) => {
 
-            console.log(msg);
-
-            this.bot.sendMessage(msg.chat.id, "BITCH")
+            this.bot.sendMessage(msg.chat.id,fs.readFileSync("./config/about.txt"))
 
         })
 
@@ -138,8 +138,6 @@ class Bot {
                 let questionMark = parseInt(result[2]);
 
                 let teacherId = parseInt(result[3]);
-
-                console.log(questionId)
 
                 this.VoteDBHandler.editVote(questionId,questionMark,teacherId,response.message.chat.id);
                 
@@ -218,8 +216,6 @@ class Bot {
 
         let keyboards = this._createKeyboardForQuestion(index,teacherId);
 
-        console.log(this.questions)
-
         this.bot.sendMessage(chatId, this.questions[index - 1].text, {
             reply_markup: {
                 inline_keyboard: keyboards
@@ -237,19 +233,19 @@ class Bot {
                 let name = response.text;
 
                 if(!this.TeacherDBHandler._checkTeacherExistance(name,catId)){
-                    console.log("a")
+
                     if(this.NewTeacherDBHandler.addTecher(name,catId,chatId)){
-                        console.log("b")
+
                         this.bot.sendMessage(chatId,"استاد پس از تایید، ثبت خواهد شد. \n با تشکر از همکاری شما.")
 
                     }else{
-                        console.log("c")
+
                         this.bot.sendMessage(chatId,"این بات در لیست انتظار افزوده شدن می باشد.");
 
                     }
 
                 }else{
-                    console.log("d")
+
                     this.bot.sendMessage(chatId,"این استاد در حال حاضر در بات می باشد.");
 
                 }
@@ -297,7 +293,7 @@ class Bot {
     _createKeyboardForQuestion(questionId, teacherId) {
         let keyboards = [];
         let temp = [];
-        console.log("s")
+
         for (let i = 0; i < 11; i++) {
             if ((i % 2 == 0 && i != 0)) {
                 keyboards.push(temp);

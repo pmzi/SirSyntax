@@ -12,13 +12,7 @@ class TeacherDBHandler{
     
     addTeacher(name,cat){
 
-        return new Promise((resolve,reject)=>{
 
-            
-
-            resolve();
-
-        })
 
         
 
