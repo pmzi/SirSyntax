@@ -62,6 +62,10 @@ class VoteDBHandler {
 
     parseVote(votes, teacherName) {
 
+        if(votes.length == 0){
+            return "نظری برای مشاهده وجود دارد.";
+        }
+
         let sum = [];
         let i;
         for (let item of votes) {
