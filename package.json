@@ -1,0 +1,30 @@
+{
+  "name": "sirsyntax",
+  "version": "1.0.0",
+  "description": "(Working In Progress)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"node index.js",
+    "start:watch":"nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pmzi/SirSyntax.git"
+  },
+  "keywords": [
+    "bot",
+    "telegram",
+    "telegram-bot",
+    "teachervote"
+  ],
+  "author": "Pouya MozaffarMagham",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pmzi/SirSyntax/issues"
+  },
+  "homepage": "https://github.com/pmzi/SirSyntax#readme",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.30.0"
+  }
+}
