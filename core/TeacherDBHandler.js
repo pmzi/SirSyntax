@@ -37,8 +37,7 @@ class TeacherDBHandler{
     }
 
     filterByCat(catId){
-        console.log(catId)
-        console.log(this.teachers.filter(item=>item.cat == catId))
+
         return this.teachers.filter(item=>item.cat == catId);
     }
 

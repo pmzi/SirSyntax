@@ -85,8 +85,6 @@ class VoteDBHandler {
             sum[item] = sum[item].toFixed(2);
         }
 
-        console.log(votes.length);
-
         let standards = {};
         i = 0;
         for (let item in votes[0].standards) {

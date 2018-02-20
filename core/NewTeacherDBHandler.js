@@ -34,9 +34,9 @@ class UserDBHandler{
     }
 
     _checkUserExistance(name,catId){
-        console.log(this.newTeachers)
+
         let teacher = this.newTeachers.filter(teacher=>teacher.cat == catId && teacher.name == name.trim());
-        console.log(teacher)
+
         if(teacher.length>=1){
             return true;
         }
