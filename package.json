@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"node index.js",
-    "start:watch":"nodemon index.js"
+    "start": "node index.js",
+    "start:watch": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/pmzi/SirSyntax#readme",
   "dependencies": {
+    "mongoose": "^5.0.9",
     "node-telegram-bot-api": "^0.30.0"
   }
 }
