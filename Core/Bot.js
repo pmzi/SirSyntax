@@ -52,14 +52,21 @@ class Bot {
         // Receives every message and searches for the related commands
         this.bot.on("message", (msg) => {
             this.auth(msg).then(()=>{
-                this.run(msg);
+                this.findTask(msg.chat.id).then((task)=>{
+                    if(task == "false"){
+                        this.run(msg);
+                    }else{
+                        let args = /(.+):(.+)/i.exec(task);
+                        this[args[1]](msg,args);
+                        this.clearTask(msg.chat.id);
+                    }
+                })
             });
         })
 
         // Receives callbacks and directs them to the proper callback method
 
         this.bot.on("callback_query", (msg) => {
-            console.log(msg)
             this.auth(msg).then(()=>{
                 this.answerCallBackQuery(msg);
             });
@@ -128,6 +135,38 @@ class Bot {
 
     addMiddleWare(name,cb){
         this["middle_" + name] = cb;
+    }
+
+    /**
+     * 
+     * @param {Number} chatID
+     * 
+     * @param {String} cmdName
+     * 
+     */
+
+    addTaskToUser(chatID, cmdName){
+        return false;
+    }
+
+    /**
+     * 
+     * @param {Number} chatID
+     * 
+     */
+
+    clearTask(chatID){
+        return false;
+    }
+
+    /**
+     * 
+     * @param {Number} chatID
+     * 
+     */
+
+    findTask(chatID){
+        return false;
     }
 
     /**
@@ -211,9 +250,8 @@ class Bot {
         let data = response.data;
 
         for(let callBack of this.callBacks){
-            console.log(callBack)
             if(callBack.pattern.test(data)){
-                this["clb_" + callBack.name](callBack.pattern.exec(data));
+                this["clb_" + callBack.name](callBack.pattern.exec(data),response.message);
             }
         }
 
@@ -228,7 +266,7 @@ class Bot {
 
     /**
      * 
-     * @param {Object} items
+     * @param {Array Of Objects} items
      * 
      * @param {String} prefix
      * 

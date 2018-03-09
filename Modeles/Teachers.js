@@ -15,17 +15,19 @@ const TeachersSchema = new mongoose.Schema({
     gCat: {
         type: mongoose.Schema.Types.ObjectId,
         require:true
-    },
-    like:{
-        type:Number,
-        default:0
-    },
-    disLike:{
-        type:Number,
-        default:0
     }
 });
 
 const Teachers = mongoose.model('Teachers', TeachersSchema);
+
+Teachers.findTeacherName = (teacherID)=>{
+
+    return new Promise((resolve,reject)=>{
+        Teachers.findOne({_id:teacherID},"name").then((data)=>{
+            resolve(data.name)
+        })
+    })
+
+};
 
 module.exports = Teachers;

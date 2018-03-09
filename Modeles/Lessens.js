@@ -7,12 +7,20 @@ const LessensSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    TeacherID:{
+    teacherID:{
         type:mongoose.Schema.Types.ObjectId,
         required:true
     }
 });
 
 const Lessens = mongoose.model('Lessens', LessensSchema);
+
+Lessens.findTeacherID = (lessenID)=>{
+    return new Promise((resolve,reject)=>{
+        Lessens.findOne({_id:lessenID},"teacherID").then((data)=>{
+            resolve(data.teacherID);
+        })
+    })
+}
 
 module.exports = Lessens;
