@@ -118,7 +118,7 @@ class Bot {
     addCallBack(name, pattern, cb) {
         this.callBacks.push({
             name: name,
-            pattern: pattern
+            pattern: new RegExp(pattern,"i")
         });
 
         this["clb_" + name] = cb;
@@ -274,7 +274,7 @@ class Bot {
      * 
      */
 
-    createInlineKeyboard(items, prefix,perRow) {
+    createInlineKeyboard(items, prefix,perRow,textKey,callbackDataKey) {
         let keyboards = [];
         let temp = [];
         let i = 0;
@@ -284,10 +284,9 @@ class Bot {
                 keyboards.push(temp);
                 temp = [];
             }
-
             temp.push({
-                text: item.name,
-                callback_data: prefix + "-" + item._id
+                text: (item[textKey] || item.name),
+                callback_data: prefix + "-" + (item[callbackDataKey] || item._id)
             });
 
             if (i == items.length - 1) {

@@ -4,6 +4,10 @@ const Bot = require("./Bot");
 
 const bot = new Bot(config.general.API, config.general.ID);
 
+// Datas
+
+const questions = require("../Config/Questions");
+
 // Modeles
 
 const Users = require("../Modeles/Users");
@@ -154,6 +158,25 @@ bot.addCommand("viewTeachers", "مشاهده اساتید", (msg) => {
 
 }, "university");
 
+bot.addCommand("viewTeachers", "نظر دادن به اساتید", (msg) => {
+
+    Cats.find({}).then((cats) => {
+
+        const keyboard = bot.createInlineKeyboard(cats, "group-cat-v");
+
+        bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
+            reply_markup: {
+                inline_keyboard: keyboard
+            }
+        }, {
+            sign: false
+        });
+
+    })
+
+}, "university");
+
+
 // commands with afterwards
 
 bot.addCommand("addCommand", null, (msg, args) => {
@@ -174,15 +197,19 @@ bot.addCommand("addCommand", null, (msg, args) => {
 
 // CallBacks
 
-bot.addCallBack("cb_select_uni", /select-uni-([\d\w]+)/i, (data, msg) => {
+bot.addCallBack("cb_select_uni", /^select-uni-([\d\w]+)$/i, (data, msg) => {
     Users.update({
         chatID: msg.chat.id
     }, {
         university: data[1]
-    });
+    }).then(() => {
+        console.log("University Updated!");
+    })
 });
 
-bot.addCallBack("cb_cat", /group-cat-([\d\w]+)/i, (data, msg) => {
+// For seeing techers section
+
+bot.addCallBack("cb_cat", /^group-cat-([\d\w]+)$/i, (data, msg) => {
 
     //showing the teachers in the cat
 
@@ -204,7 +231,7 @@ bot.addCallBack("cb_cat", /group-cat-([\d\w]+)/i, (data, msg) => {
 
 });
 
-bot.addCallBack("cb_teacher", /teacher-([\d\w]+)/i, (data, msg) => {
+bot.addCallBack("cb_teacher", /^teacher-([\d\w]+)$/i, (data, msg) => {
 
     //showing the lessens that the teacher have thought
 
@@ -228,7 +255,7 @@ bot.addCallBack("cb_teacher", /teacher-([\d\w]+)/i, (data, msg) => {
 
 });
 
-bot.addCallBack("cb_lessen", /lessen-([\d\w]+)/i, (data, msg) => {
+bot.addCallBack("cb_lessen", /^lessen-([\d\w]+)$/i, (data, msg) => {
 
     //showing the lessens that the teacher have thought
 
@@ -272,7 +299,7 @@ bot.addCallBack("cb_lessen", /lessen-([\d\w]+)/i, (data, msg) => {
 
 });
 
-bot.addCallBack("cb_vote_see", /vote-see-([\d\w]+)-([\w\d]+)/i, (data, msg) => {
+bot.addCallBack("cb_vote_see", /^vote-see-([\d\w]+)-([\w\d]+)$/i, (data, msg) => {
 
     //let's handle the options
 
@@ -328,7 +355,7 @@ bot.addCallBack("cb_vote_see", /vote-see-([\d\w]+)-([\w\d]+)/i, (data, msg) => {
                 }, "text").then((data) => {
                     Lessens.findTeacherID(lessenID).then((tID) => {
                         Teachers.findTeacherName(tID).then((teacherName) => {
-                            let result = commentParser.parse(data,teacherName);
+                            let result = commentParser.parse(data, teacherName);
                             bot.sendMessage(msg, result);
                         })
                     })
@@ -348,6 +375,176 @@ bot.addCallBack("cb_vote_see", /vote-see-([\d\w]+)-([\w\d]+)/i, (data, msg) => {
                 break;
         }
     })
+
+
+});
+
+//For giving votes
+
+bot.addCallBack("cb_cat_v", /^group-cat-v-([\d\w]+)$/i, (data, msg) => {
+
+    //showing the teachers in the cat
+
+    let catID = data[1];
+
+    Teachers.find({
+        gCat: catID
+    }).then((ts) => {
+        const keyboard = bot.createInlineKeyboard(ts, "teacher-v");
+
+        bot.sendMessage(msg, "استاد مورد نظر خود را انتخاب کنید.", {
+            reply_markup: {
+                inline_keyboard: keyboard
+            }
+        }, {
+            sign: false
+        });
+    });
+
+});
+
+bot.addCallBack("cb_teacher_v", /^teacher-v-([\d\w]+)$/i, (data, msg) => {
+
+    //showing the lessens that the teacher have thought
+
+
+    let teacherID = data[1];
+
+    Lessens.find({
+        teacherID: teacherID
+    }).then((ls) => {
+        const keyboard = bot.createInlineKeyboard(ls, "lessen-v");
+
+        bot.sendMessage(msg, "درس مورد نظری که استاد ارایه می‌دهد را انتخاب کنید:", {
+            reply_markup: {
+                inline_keyboard: keyboard
+            }
+        }, {
+            sign: false
+        });
+    });
+
+
+});
+
+// Let's handle first question
+
+bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
+
+    //Let's ask some questions!
+
+    let lessenID = data[1];
+
+    //check if user has voted so far
+
+    Users.findOne({
+        chatID: msg.chat.id
+    }).then((u) => {
+        Votes.findOne({
+            userID: u._id
+        }).then((v) => {
+            if (v.length != 0) {
+                bot.sendMessage(msg, "شما قبلا به این درس از این استاد نظر داده اید.");
+            } else {
+                let up = {
+                    q1: -1,
+                    q2: -1,
+                    q3: -1,
+                    q4: -1,
+                    q5: -1,
+                    lessenID: lessenID
+                }
+
+                //let's create the vote
+
+                Users.findOne({
+                    chatID: msg.chat.id
+                }).then((u) => {
+                    up.userID = u._id;
+                    new Votes(up).save().then((v) => {
+                        const keyboard = bot.createInlineKeyboard(questions[0].options, "question-1-" + lessenID, null, "text", "value");
+                        bot.sendMessage(msg, questions[0].text, {
+                            reply_markup: {
+                                inline_keyboard: keyboard
+                            }
+                        }, {
+                            sign: false
+                        });
+                    })
+                })
+            }
+        })
+    })
+});
+
+// Let's add cllbck for each question
+
+for (let i = 1; i < questions.length; i++) {
+
+    bot.addCallBack("cb_question_" + i, "^question-" + i + "-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+
+        //Let's ask some questions!
+
+        let lessenID = data[1];
+
+        let answer = data[2];
+
+        let up = {};
+
+        up["q" + i] = answer;
+
+        //updating the vote 
+
+        Users.findOne({
+            chatID: msg.chat.id
+        }).then((u) => {
+            Votes.update({
+                userID: u._id
+            }, up).then((v) => {
+                const keyboard = bot.createInlineKeyboard(questions[i].options, "question-" + (i + 1) + "-" + lessenID, null, "text", "value");
+
+                bot.sendMessage(msg, questions[i].text, {
+                    reply_markup: {
+                        inline_keyboard: keyboard
+                    }
+                }, {
+                    sign: false
+                });
+            })
+        })
+
+
+
+
+
+
+    });
+
+}
+
+bot.addCallBack("cb_question_" + (questions.length), "^question-" + (questions.length) + "-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+
+    //Let's ask some questions!
+
+    let lessenID = data[1];
+
+    let answer = data[2];
+
+    let up = {};
+
+    up["q" + questions.length] = answer;
+
+    Users.findOne({
+        chatID: msg.chat.id
+    }).then((u) => {
+        Votes.update({
+            userID: u._id
+        }, up).then((v) => {
+            bot.sendMessage(msg, "مرسی ");
+        })
+    })
+
+
 
 
 });
