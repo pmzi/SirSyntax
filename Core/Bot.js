@@ -28,7 +28,7 @@ class Bot {
             "reply_markup": {
                 "keyboard": [
                     ["مشاهده اساتید", "نظر دادن به اساتید"],
-                    ["پیشنهاد افزودن استاد"],
+                    ["پیشنهاد/انتقاد"],
                     ["درباره ما"]
                 ]
             }
@@ -56,8 +56,13 @@ class Bot {
                     if(task == "false"){
                         this.run(msg);
                     }else{
-                        let args = /(.+):(.+)/i.exec(task);
-                        this[args[1]](msg,args);
+                        let pattern = /(.+):(.+)/i;
+                        let args = task;
+                        if(pattern.test(task)){
+                            args = pattern.exec(task);
+                            task = args[1];//command name
+                        }
+                        this[task](msg,args);
                         this.clearTask(msg.chat.id);
                     }
                 })

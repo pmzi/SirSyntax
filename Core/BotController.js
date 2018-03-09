@@ -4,6 +4,10 @@ const Bot = require("./Bot");
 
 const bot = new Bot(config.general.API, config.general.ID);
 
+//libraries
+
+const fs = require("fs");
+
 // Datas
 
 const questions = require("../Config/Questions");
@@ -25,6 +29,8 @@ const Votes = require("../Modeles/Votes");
 const Likes = require("../Modeles/Likes");
 
 const Comments = require("../Modeles/Comments");
+
+const Suggestions = require("../Modeles/Suggestions");
 
 // Helpers
 
@@ -176,6 +182,17 @@ bot.addCommand("viewTeachers", "نظر دادن به اساتید", (msg) => {
 
 }, "university");
 
+bot.addCommand("suggest","پیشنهاد/انتقاد",(msg)=>{
+    bot.sendMessage(msg,"پیشنهاد/انتقاد خود را وارد کنید:");
+    bot.addTaskToUser(msg.chat.id,"cmd_addSuggestion");
+},"university");
+
+bot.addCommand("aboutUs","درباره ما",(msg)=>{
+
+    let aboutUsText = fs.readFileSync("./Config/about.md");
+
+    bot.sendMessage(msg,aboutUsText,{parse_mode : "MarkDown"});
+});
 
 // commands with afterwards
 
@@ -193,7 +210,14 @@ bot.addCommand("addCommand", null, (msg, args) => {
     })
 });
 
-
+bot.addCommand("addSuggestion",null,(msg,args)=>{
+    Users.findOne({chatID:msg.chat.id}).then((u)=>{
+        new Suggestions({userID:u._id,text:msg.text}).save().then(()=>{
+            bot.sendMessage(msg,"با تشکر. پیشنهاد/انتقاد شما حتما اعمال خواهد شد.");
+            console.log("Suggestion Added!");
+        })
+    })
+})
 
 // CallBacks
 
@@ -443,9 +467,7 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
         Votes.findOne({
             userID: u._id
         }).then((v) => {
-            if (v.length != 0) {
-                bot.sendMessage(msg, "شما قبلا به این درس از این استاد نظر داده اید.");
-            } else {
+            if (!v || v.length != 0) {
                 let up = {
                     q1: -1,
                     q2: -1,
@@ -463,6 +485,7 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
                     up.userID = u._id;
                     new Votes(up).save().then((v) => {
                         const keyboard = bot.createInlineKeyboard(questions[0].options, "question-1-" + lessenID, null, "text", "value");
+                        
                         bot.sendMessage(msg, questions[0].text, {
                             reply_markup: {
                                 inline_keyboard: keyboard
@@ -472,19 +495,21 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
                         });
                     })
                 })
+
+            } else {
+                bot.sendMessage(msg, "شما قبلا به این درس از این استاد نظر داده اید.");
             }
         })
     })
 });
 
-// Let's add cllbck for each question
+// Let's add cشllbشck for each question
 
 for (let i = 1; i < questions.length; i++) {
 
     bot.addCallBack("cb_question_" + i, "^question-" + i + "-([\\d\\w]+)-(\\d+)$", (data, msg) => {
 
         //Let's ask some questions!
-
         let lessenID = data[1];
 
         let answer = data[2];
