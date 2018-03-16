@@ -51,18 +51,18 @@ class Bot {
 
         // Receives every message and searches for the related commands
         this.bot.on("message", (msg) => {
-            this.auth(msg).then(()=>{
-                this.findTask(msg.chat.id).then((task)=>{
-                    if(task == "false"){
+            this.auth(msg).then(() => {
+                this.findTask(msg.chat.id).then((task) => {
+                    if (task == "false") {
                         this.run(msg);
-                    }else{
+                    } else {
                         let pattern = /(.+):(.+)/i;
                         let args = task;
-                        if(pattern.test(task)){
+                        if (pattern.test(task)) {
                             args = pattern.exec(task);
-                            task = args[1];//command name
+                            task = args[1]; //command name
                         }
-                        this[task](msg,args);
+                        this[task](msg, args);
                         this.clearTask(msg.chat.id);
                     }
                 })
@@ -72,7 +72,7 @@ class Bot {
         // Receives callbacks and directs them to the proper callback method
 
         this.bot.on("callback_query", (msg) => {
-            this.auth(msg).then(()=>{
+            this.auth(msg).then(() => {
                 this.answerCallBackQuery(msg);
             });
         })
@@ -84,7 +84,7 @@ class Bot {
      * 
      */
 
-    auth(){
+    auth() {
         return false;
     }
 
@@ -104,7 +104,7 @@ class Bot {
         this.cmds.push({
             name: name,
             pattern: pattern,
-            middleware:middleware || null
+            middleware: middleware || null
         });
 
         this["cmd_" + name] = cb;
@@ -123,7 +123,7 @@ class Bot {
     addCallBack(name, pattern, cb) {
         this.callBacks.push({
             name: name,
-            pattern: new RegExp(pattern,"i")
+            pattern: new RegExp(pattern, "i")
         });
 
         this["clb_" + name] = cb;
@@ -138,7 +138,7 @@ class Bot {
      * 
      */
 
-    addMiddleWare(name,cb){
+    addMiddleWare(name, cb) {
         this["middle_" + name] = cb;
     }
 
@@ -150,7 +150,7 @@ class Bot {
      * 
      */
 
-    addTaskToUser(chatID, cmdName){
+    addTaskToUser(chatID, cmdName) {
         return false;
     }
 
@@ -160,7 +160,7 @@ class Bot {
      * 
      */
 
-    clearTask(chatID){
+    clearTask(chatID) {
         return false;
     }
 
@@ -170,7 +170,7 @@ class Bot {
      * 
      */
 
-    findTask(chatID){
+    findTask(chatID) {
         return false;
     }
 
@@ -190,8 +190,8 @@ class Bot {
         sign: true
     }) {
 
-        if(options.sign){
-            text += "\n\n"+this.ID;
+        if (options.sign) {
+            text += "\n\n" + this.ID;
         }
 
         this.bot.sendMessage(msg.chat.id, text, keyboard || this.keyboard);
@@ -219,16 +219,16 @@ class Bot {
 
         for (let command of this.cmds) {
             if (messageText == command.pattern) {
-                if(command.middleware){
+                if (command.middleware) {
 
-                    this["middle_" + command.middleware](msg).then(()=>{
+                    this["middle_" + command.middleware](msg).then(() => {
                         // Let's execute the command
                         this["cmd_" + command.name](msg);
-                    }).catch(()=>{
+                    }).catch(() => {
                         // catch
                     });
 
-                }else{
+                } else {
                     // Let's execute the command
                     this["cmd_" + command.name](msg);
                 }
@@ -252,21 +252,21 @@ class Bot {
 
     answerCallBackQuery(response) {
 
-        let data = response.data;
-
-        for(let callBack of this.callBacks){
-            if(callBack.pattern.test(data)){
-                this["clb_" + callBack.name](callBack.pattern.exec(data),response.message);
-            }
-        }
-
         // ِDeleting last message
 
+        this.bot.deleteMessage(response.message.chat.id, response.message.message_id).then(() => {
+            let data = response.data;
 
-        this.bot.deleteMessage(response.message.chat.id,response.message.message_id)
+            for (let callBack of this.callBacks) {
+                if (callBack.pattern.test(data)) {
+                    this["clb_" + callBack.name](callBack.pattern.exec(data), response.message);
+                }
+            }
 
-        this.bot.answerCallbackQuery(response.id);
-
+            this.bot.answerCallbackQuery(response.id);
+        }).catch(()=>{
+            // Message to delete not found...:)
+        })
     }
 
     /**
@@ -279,7 +279,7 @@ class Bot {
      * 
      */
 
-    createInlineKeyboard(items, prefix,perRow,textKey,callbackDataKey) {
+    createInlineKeyboard(items, prefix, perRow, textKey, callbackDataKey) {
         let keyboards = [];
         let temp = [];
         let i = 0;

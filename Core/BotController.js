@@ -123,23 +123,23 @@ bot.findQuestionsByLessenID = (lessenID) => {
     })
 }
 
-bot.getCatsFromIDS = (catIDS)=>{
-    return new Promise((resolve,reject)=>{
+bot.getCatsFromIDS = (catIDS) => {
+    return new Promise((resolve, reject) => {
 
-        if(catIDS.length == 0){
+        if (catIDS.length == 0) {
             resolve([]);
         }
 
         let cats = [];
 
-        catIDS.forEach((catID)=>{
-            Cats.findById(catID).then((cat)=>{
+        catIDS.forEach((catID) => {
+            Cats.findById(catID).then((cat) => {
                 cats.push(cat);
 
                 //if the end
 
-                if(cats.length == catIDS.length){
-                    resolve(cats);//What the fuck?
+                if (cats.length == catIDS.length) {
+                    resolve(cats); //What the fuck?
                 }
 
             })
@@ -187,32 +187,43 @@ bot.addCommand("selectUniversity", "انتخاب دانشگاه", (msg) => {
 
 bot.addCommand("viewTeachers", "مشاهده اساتید", (msg) => {
 
-    Cats.find({}).then((cats) => {
+    Users.findOne({
+        chatID: msg.chat.id
+    }, "university").then((user) => {
+        Unies.findOne({
+            _id: user.university
+        }, "cats").then((u) => {
 
-        const keyboard = bot.createInlineKeyboard(cats, "group-cat");
+            bot.getCatsFromIDS(u.cats).then((cats) => {
+                console.log(cats)
+                const keyboard = bot.createInlineKeyboard(cats, "group-cat", null, "name");
 
-        bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
-            reply_markup: {
-                inline_keyboard: keyboard
-            }
-        }, {
-            sign: false
-        });
-
+                bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
+                    reply_markup: {
+                        inline_keyboard: keyboard
+                    }
+                }, {
+                    sign: false
+                });
+            })
+        })
     })
 
 }, "university");
 
-bot.addCommand("viewTeachers", "نظر دادن به اساتید", (msg) => {
+bot.addCommand("voteTeachers", "نظر دادن به اساتید", (msg) => {
 
-    Users.findOne({chatID:msg.chat.id},"university").then((user)=>{
+    Users.findOne({
+        chatID: msg.chat.id
+    }, "university").then((user) => {
         Unies.findOne({
             _id: user.university
         }, "cats").then((u) => {
-    
+
             bot.getCatsFromIDS(u.cats).then((cats) => {
-                const keyboard = bot.createInlineKeyboard(cats, "group-cat-v",null,"name");
-    
+                console.log(cats, "sss")
+                const keyboard = bot.createInlineKeyboard(cats, "group-cat-v", null, "name");
+
                 bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
                     reply_markup: {
                         inline_keyboard: keyboard
@@ -287,7 +298,7 @@ bot.addCallBack("cb_select_uni", /^select-uni-([\d\w]+)$/i, (data, msg) => {
 bot.addCallBack("cb_cat", /^group-cat-([\d\w]+)$/i, (data, msg) => {
 
     //showing the teachers in the cat
-
+    console.log("s")
     let catID = data[1];
 
     Teachers.find({
@@ -343,27 +354,41 @@ bot.addCallBack("cb_lessen", /^lessen-([\d\w]+)$/i, (data, msg) => {
             lessenID: lessenID
         }).then((lks) => {
 
-            let result = voteParser.parse(vs, lks);
+            bot.findQuestionsByLessenID(lessenID).then((questions) => {
 
-            const keyboard = bot.createInlineKeyboard([{
-                name: "پیشنهاد می‌دهم",
-                _id: 0 + "-" + lessenID
-            }, {
-                name: "پیشنهاد نمی‌دهم",
-                _id: 1 + "-" + lessenID
-            }, {
-                name: "مشاهده نظرات",
-                _id: 2 + "-" + lessenID
-            }, {
-                name: "ثبت نظر",
-                _id: 3 + "-" + lessenID
-            }], "vote-see");
+                Lessens.findOne({
+                    _id: lessenID
+                }, "teacherID").then((ls) => {
+                    Teachers.findTeacherName(ls.teacherID).then((teacherName) => {
 
-            bot.sendMessage(msg, result, {
-                reply_markup: {
-                    inline_keyboard: keyboard
-                }
-            });
+                        let result = voteParser.parse(vs, questions, lks, teacherName);
+
+                        const keyboard = bot.createInlineKeyboard([{
+                            name: "پیشنهاد می‌دهم",
+                            _id: 0 + "-" + lessenID
+                        }, {
+                            name: "پیشنهاد نمی‌دهم",
+                            _id: 1 + "-" + lessenID
+                        }, {
+                            name: "مشاهده نظرات",
+                            _id: 2 + "-" + lessenID
+                        }, {
+                            name: "ثبت نظر",
+                            _id: 3 + "-" + lessenID
+                        }], "vote-see");
+
+                        bot.sendMessage(msg, result, {
+                            reply_markup: {
+                                inline_keyboard: keyboard
+                            }
+                        });
+                    })
+                })
+
+
+            })
+
+
 
         });
 
@@ -456,7 +481,6 @@ bot.addCallBack("cb_vote_see", /^vote-see-([\d\w]+)-([\w\d]+)$/i, (data, msg) =>
 //For giving votes
 
 bot.addCallBack("cb_cat_v", /^group-cat-v-([\d\w]+)$/i, (data, msg) => {
-
     //showing the teachers in the cat
 
     let catID = data[1];
@@ -516,7 +540,7 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
     }).then((u) => {
         Votes.findOne({
             userID: u._id,
-            lessenID:lessenID
+            lessenID: lessenID
         }).then((v) => {
             if (v == null) {
                 let up = {
