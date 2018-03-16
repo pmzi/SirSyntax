@@ -52,7 +52,7 @@ class VoteParser {
 
         let negativePercent = (100*negatives/(negatives+positives)).toFixed(2);
         
-        let positivePercent = 100 - negativePercent;
+        let positivePercent = (100 - negativePercent) || 0;
 
         if(positivePercent < 50){
             text += "زیر 50% ";
@@ -65,6 +65,8 @@ class VoteParser {
         }else if(positivePercent>=90 && positivePercent <=100){
             text += "بین 90% تا 100%";
         }
+
+        console.log(positivePercent)
 
         return text;
     }

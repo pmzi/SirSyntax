@@ -15,6 +15,10 @@ const TeachersSchema = new mongoose.Schema({
     gCat: {
         type: mongoose.Schema.Types.ObjectId,
         require:true
+    },
+    lessens:{
+        type:[],
+        required:false
     }
 });
 

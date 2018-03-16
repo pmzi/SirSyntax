@@ -6,10 +6,6 @@ const LessensSchema = new mongoose.Schema({
     name:{
         type:String,
         required:true
-    },
-    teacherID:{
-        type:mongoose.Schema.Types.ObjectId,
-        required:true
     }
 });
 

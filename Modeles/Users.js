@@ -24,6 +24,10 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    group:{
+        type:Number,
+        default:1
+    },
     name: {
         type: String,
         default: "",

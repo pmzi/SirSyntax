@@ -226,6 +226,7 @@ class Bot {
                         this["cmd_" + command.name](msg);
                     }).catch(() => {
                         // catch
+                        this.commandNotFound(msg);
                     });
 
                 } else {
