@@ -9,7 +9,9 @@ class VoteParser {
         for (let i = 0; i < questions.questions.length; i++) {
             average = 0;
             for (let vote of votes) {
-                average += parseInt(vote.answer[i].value);
+                if(vote.answer[i]){
+                    average += parseInt(vote.answer[i].value);
+                }
             }
             average = average / votes.length;
             if (average < 0) {
@@ -25,9 +27,9 @@ class VoteParser {
 
             let optionText = "";
 
-            optionText = "❓"+questions.questions[i].options.filter(option => option.value == average)[0].text;
+            optionText = questions.questions[i].options.filter(option => option.value == average)[0].text;
 
-            text += questions.questions[i].text + "\n💬" + optionText + "\n";
+            text += "❓"+questions.questions[i].text + "\n💬" + optionText + "\n";
 
         }
 

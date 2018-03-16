@@ -186,6 +186,10 @@ module.exports = function (bot) {
 
     // commands
 
+    bot.addCommand("start","/start",(msg)=>{
+        bot.sendMessage(msg,"سلام:)");
+    })
+
     bot.addCommand("selectUniversity", "انتخاب دانشگاه", (msg) => {
 
         Unies.find({}, "name").then((data) => {
@@ -213,7 +217,6 @@ module.exports = function (bot) {
             }, "cats").then((u) => {
 
                 bot.getCatsFromIDS(u.cats).then((cats) => {
-                    console.log(cats)
                     const keyboard = bot.createInlineKeyboard(cats, "group-cat", null, "name");
 
                     bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
@@ -239,7 +242,6 @@ module.exports = function (bot) {
             }, "cats").then((u) => {
 
                 bot.getCatsFromIDS(u.cats).then((cats) => {
-                    console.log(cats, "sss")
                     const keyboard = bot.createInlineKeyboard(cats, "group-cat-v", null, "name");
 
                     bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
@@ -316,7 +318,6 @@ module.exports = function (bot) {
     bot.addCallBack("cb_cat", /^group-cat-([\d\w]+)$/i, (data, msg) => {
 
         //showing the teachers in the cat
-        console.log("s")
         let catID = data[1];
 
         Teachers.find({
@@ -344,7 +345,6 @@ module.exports = function (bot) {
         Teachers.findOne({
             _id: teacherID
         }, "lessens").then((ts) => {
-            console.log(ts)
             bot.getLessensFromIDS(ts.lessens).then((lessens) => {
                 const keyboard = bot.createInlineKeyboard(lessens, "lessen" + "-" + teacherID);
                 bot.sendMessage(msg, "درس مورد نظری که استاد ارایه می‌دهد را انتخاب کنید:", {
@@ -525,18 +525,20 @@ module.exports = function (bot) {
 
         let teacherID = data[1];
 
-        Lessens.find({
-            teacherID: teacherID
-        }).then((ls) => {
-            const keyboard = bot.createInlineKeyboard(ls, "lessen-v");
+        Teachers.findOne({
+            _id: teacherID
+        }, "lessens").then((ts) => {
+            bot.getLessensFromIDS(ts.lessens).then((lessens) => {
+                const keyboard = bot.createInlineKeyboard(lessens, "lessen-v-" + teacherID);
+                bot.sendMessage(msg, "درس مورد نظری که استاد ارایه می‌دهد را انتخاب کنید:", {
+                    reply_markup: {
+                        inline_keyboard: keyboard
+                    }
+                }, {
+                    sign: false
+                });
+            })
 
-            bot.sendMessage(msg, "درس مورد نظری که استاد ارایه می‌دهد را انتخاب کنید:", {
-                reply_markup: {
-                    inline_keyboard: keyboard
-                }
-            }, {
-                sign: false
-            });
         });
 
 
@@ -544,11 +546,13 @@ module.exports = function (bot) {
 
     // Let's handle first question
 
-    bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
+    bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)-([\d\w]+)$/i, (data, msg) => {
 
         //Let's ask some questions!
 
-        let lessenID = data[1];
+        let teacherID = data[1];
+
+        let lessenID = data[2];
 
         //check if user has voted so far
 
@@ -574,9 +578,8 @@ module.exports = function (bot) {
 
                             // Let's find the questions to ask
 
-                            bot.findQuestionsByLessenID(lessenID).then((questions) => {
-                                const keyboard = bot.createInlineKeyboard(questions.questions[0].options, "question-1-" + lessenID, null, "text", "value");
-
+                            bot.findQuestionsByTeacherID(teacherID).then((questions) => {
+                                const keyboard = bot.createInlineKeyboard(questions.questions[0].options, "question-1-" + teacherID + "-" + lessenID, null, "text", "value");
                                 bot.sendMessage(msg, questions.questions[0].text, {
                                     reply_markup: {
                                         inline_keyboard: keyboard
@@ -599,15 +602,17 @@ module.exports = function (bot) {
 
     // Let's add callback for each question
 
-    bot.addCallBack("cb_question", "^question-(\\d+)-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+    bot.addCallBack("cb_question", "^question-(\\d+)-([\\d\\w]+)-([\\d\\w]+)-(\\d+)$", (data, msg) => {
 
         //Let's ask some questions!
 
         let questionNumber = parseInt(data[1]);
 
-        let lessenID = data[2];
+        let teacherID = data[2];
 
-        let answer = data[3];
+        let lessenID = data[3];
+
+        let answer = data[4];
 
         let next;
 
@@ -632,7 +637,7 @@ module.exports = function (bot) {
                 }).then((v) => {
 
                     //
-                    bot.findQuestionsByLessenID(lessenID).then((questions) => {
+                    bot.findQuestionsByTeacherID(teacherID).then((questions) => {
 
                         if (questions.questions[questionNumber + 1]) {
                             next = questionNumber + 1;
@@ -640,7 +645,7 @@ module.exports = function (bot) {
                             next = "end";
                         }
 
-                        const keyboard = bot.createInlineKeyboard(questions.questions[questionNumber].options, "question-" + next + "-" + lessenID, null, "text", "value");
+                        const keyboard = bot.createInlineKeyboard(questions.questions[questionNumber].options, "question-" + next + "-" + teacherID + "-" + lessenID, null, "text", "value");
 
                         bot.sendMessage(msg, questions.questions[questionNumber].text, {
                             reply_markup: {
@@ -658,13 +663,15 @@ module.exports = function (bot) {
 
     });
 
-    bot.addCallBack("cb_question_end", "^question-end-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+    bot.addCallBack("cb_question_end", "^question-end-([\\d\\w]+)-([\\d\\w]+)-(\\d+)$", (data, msg) => {
 
         //Let's ask some questions!
 
-        let lessenID = data[1];
+        let questionID = data[1];
 
-        let answer = data[2];
+        let lessenID = data[2];
+
+        let answer = data[3];
 
         Users.findOne({
             chatID: msg.chat.id
