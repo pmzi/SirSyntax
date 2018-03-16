@@ -7,9 +7,9 @@ const CatsSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    universityID:{
+    questionID:{
         type:mongoose.Schema.Types.ObjectId,
-        required:false
+        require:true
     }
 });
 

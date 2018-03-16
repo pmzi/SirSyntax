@@ -6,6 +6,10 @@ const UniversitiesSchema = new mongoose.Schema({
     name:{
         type:String,
         required:true
+    },
+    cats:{
+        type:[],
+        required:false
     }
 });
 

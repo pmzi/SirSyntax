@@ -8,10 +8,6 @@ const bot = new Bot(config.general.API, config.general.ID);
 
 const fs = require("fs");
 
-// Datas
-
-const questions = require("../Config/Questions");
-
 // Modeles
 
 const Users = require("../Modeles/Users");
@@ -31,6 +27,8 @@ const Likes = require("../Modeles/Likes");
 const Comments = require("../Modeles/Comments");
 
 const Suggestions = require("../Modeles/Suggestions");
+
+const Questions = require("../Modeles/Questions");
 
 // Helpers
 
@@ -109,6 +107,47 @@ bot.findTask = function (chatID) {
     })
 }
 
+// Customized functions
+
+bot.findQuestionsByLessenID = (lessenID) => {
+    return new Promise((resolve, reject) => {
+        Lessens.findById(lessenID, "teacherID").then((ls) => {
+            Teachers.findById(ls.teacherID, "gCat").then((ts) => {
+                Cats.findById(ts.gCat, "questionID").then((cs) => {
+                    Questions.findById(cs.questionID).then((qs) => {
+                        resolve(qs);
+                    })
+                })
+            })
+        })
+    })
+}
+
+bot.getCatsFromIDS = (catIDS)=>{
+    return new Promise((resolve,reject)=>{
+
+        if(catIDS.length == 0){
+            resolve([]);
+        }
+
+        let cats = [];
+
+        catIDS.forEach((catID)=>{
+            Cats.findById(catID).then((cat)=>{
+                cats.push(cat);
+
+                //if the end
+
+                if(cats.length == catIDS.length){
+                    resolve(cats);//What the fuck?
+                }
+
+            })
+        })
+
+    })
+}
+
 // Adding middlewares
 
 bot.addMiddleWare("university", function (msg) {
@@ -166,32 +205,39 @@ bot.addCommand("viewTeachers", "مشاهده اساتید", (msg) => {
 
 bot.addCommand("viewTeachers", "نظر دادن به اساتید", (msg) => {
 
-    Cats.find({}).then((cats) => {
-
-        const keyboard = bot.createInlineKeyboard(cats, "group-cat-v");
-
-        bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
-            reply_markup: {
-                inline_keyboard: keyboard
-            }
-        }, {
-            sign: false
-        });
-
+    Users.findOne({chatID:msg.chat.id},"university").then((user)=>{
+        Unies.findOne({
+            _id: user.university
+        }, "cats").then((u) => {
+    
+            bot.getCatsFromIDS(u.cats).then((cats) => {
+                const keyboard = bot.createInlineKeyboard(cats, "group-cat-v",null,"name");
+    
+                bot.sendMessage(msg, "گروه آموزشی مورد نظر خود را انتخاب کنید.", {
+                    reply_markup: {
+                        inline_keyboard: keyboard
+                    }
+                }, {
+                    sign: false
+                });
+            })
+        })
     })
 
 }, "university");
 
-bot.addCommand("suggest","پیشنهاد/انتقاد",(msg)=>{
-    bot.sendMessage(msg,"پیشنهاد/انتقاد خود را وارد کنید:");
-    bot.addTaskToUser(msg.chat.id,"cmd_addSuggestion");
-},"university");
+bot.addCommand("suggest", "پیشنهاد/انتقاد", (msg) => {
+    bot.sendMessage(msg, "پیشنهاد/انتقاد خود را وارد کنید:");
+    bot.addTaskToUser(msg.chat.id, "cmd_addSuggestion");
+}, "university");
 
-bot.addCommand("aboutUs","درباره ما",(msg)=>{
+bot.addCommand("aboutUs", "درباره ما", (msg) => {
 
     let aboutUsText = fs.readFileSync("./Config/about.md");
 
-    bot.sendMessage(msg,aboutUsText,{parse_mode : "MarkDown"});
+    bot.sendMessage(msg, aboutUsText, {
+        parse_mode: "MarkDown"
+    });
 });
 
 // commands with afterwards
@@ -210,10 +256,15 @@ bot.addCommand("addCommand", null, (msg, args) => {
     })
 });
 
-bot.addCommand("addSuggestion",null,(msg,args)=>{
-    Users.findOne({chatID:msg.chat.id}).then((u)=>{
-        new Suggestions({userID:u._id,text:msg.text}).save().then(()=>{
-            bot.sendMessage(msg,"با تشکر. پیشنهاد/انتقاد شما حتما اعمال خواهد شد.");
+bot.addCommand("addSuggestion", null, (msg, args) => {
+    Users.findOne({
+        chatID: msg.chat.id
+    }).then((u) => {
+        new Suggestions({
+            userID: u._id,
+            text: msg.text
+        }).save().then(() => {
+            bot.sendMessage(msg, "با تشکر. پیشنهاد/انتقاد شما حتما اعمال خواهد شد.");
             console.log("Suggestion Added!");
         })
     })
@@ -243,7 +294,6 @@ bot.addCallBack("cb_cat", /^group-cat-([\d\w]+)$/i, (data, msg) => {
         gCat: catID
     }).then((ts) => {
         const keyboard = bot.createInlineKeyboard(ts, "teacher");
-
         bot.sendMessage(msg, "استاد مورد نظر خود را انتخاب کنید.", {
             reply_markup: {
                 inline_keyboard: keyboard
@@ -469,11 +519,6 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
         }).then((v) => {
             if (!v || v.length != 0) {
                 let up = {
-                    q1: -1,
-                    q2: -1,
-                    q3: -1,
-                    q4: -1,
-                    q5: -1,
                     lessenID: lessenID
                 }
 
@@ -484,15 +529,22 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
                 }).then((u) => {
                     up.userID = u._id;
                     new Votes(up).save().then((v) => {
-                        const keyboard = bot.createInlineKeyboard(questions[0].options, "question-1-" + lessenID, null, "text", "value");
-                        
-                        bot.sendMessage(msg, questions[0].text, {
-                            reply_markup: {
-                                inline_keyboard: keyboard
-                            }
-                        }, {
-                            sign: false
-                        });
+
+                        // Let's find the questions to ask
+
+                        bot.findQuestionsByLessenID(lessenID).then((questions) => {
+                            const keyboard = bot.createInlineKeyboard(questions.questions[0].options, "question-1-" + lessenID, null, "text", "value");
+
+                            bot.sendMessage(msg, questions.questions[0].text, {
+                                reply_markup: {
+                                    inline_keyboard: keyboard
+                                }
+                            }, {
+                                sign: false
+                            });
+                        })
+
+
                     })
                 })
 
@@ -503,51 +555,68 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
     })
 });
 
-// Let's add cشllbشck for each question
+// Let's add callback for each question
 
-for (let i = 1; i < questions.length; i++) {
+bot.addCallBack("cb_question", "^question-(\\d+)-([\\d\\w]+)-(\\d+)$", (data, msg) => {
 
-    bot.addCallBack("cb_question_" + i, "^question-" + i + "-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+    //Let's ask some questions!
 
-        //Let's ask some questions!
-        let lessenID = data[1];
+    let questionNumber = parseInt(data[1]);
 
-        let answer = data[2];
+    let lessenID = data[2];
 
-        let up = {};
+    let answer = data[3];
 
-        up["q" + i] = answer;
+    let next;
 
-        //updating the vote 
+    //updating the vote 
 
-        Users.findOne({
-            chatID: msg.chat.id
-        }).then((u) => {
+    Users.findOne({
+        chatID: msg.chat.id
+    }).then((u) => {
+        Votes.findOne({
+            userID: u._id,
+            lessenID: lessenID
+        }, "answer").then((vs) => {
+            let answerArr = vs.answer;
+            answerArr.push({
+                value: answer
+            });
             Votes.update({
-                userID: u._id
-            }, up).then((v) => {
-                const keyboard = bot.createInlineKeyboard(questions[i].options, "question-" + (i + 1) + "-" + lessenID, null, "text", "value");
+                userID: u._id,
+                lessenID: lessenID
+            }, {
+                answer: answerArr
+            }).then((v) => {
 
-                bot.sendMessage(msg, questions[i].text, {
-                    reply_markup: {
-                        inline_keyboard: keyboard
+                //
+                bot.findQuestionsByLessenID(lessenID).then((questions) => {
+
+                    if (questions.questions[questionNumber + 1]) {
+                        next = questionNumber + 1;
+                    } else {
+                        next = "end";
                     }
-                }, {
-                    sign: false
+
+                    const keyboard = bot.createInlineKeyboard(questions.questions[questionNumber].options, "question-" + next + "-" + lessenID, null, "text", "value");
+
+                    bot.sendMessage(msg, questions.questions[questionNumber].text, {
+                        reply_markup: {
+                            inline_keyboard: keyboard
+                        }
+                    }, {
+                        sign: false
+                    });
                 });
+
+
             })
         })
+    })
 
+});
 
-
-
-
-
-    });
-
-}
-
-bot.addCallBack("cb_question_" + (questions.length), "^question-" + (questions.length) + "-([\\d\\w]+)-(\\d+)$", (data, msg) => {
+bot.addCallBack("cb_question_end", "^question-end-([\\d\\w]+)-(\\d+)$", (data, msg) => {
 
     //Let's ask some questions!
 
@@ -555,21 +624,26 @@ bot.addCallBack("cb_question_" + (questions.length), "^question-" + (questions.l
 
     let answer = data[2];
 
-    let up = {};
-
-    up["q" + questions.length] = answer;
-
     Users.findOne({
         chatID: msg.chat.id
     }).then((u) => {
-        Votes.update({
-            userID: u._id
-        }, up).then((v) => {
-            bot.sendMessage(msg, "مرسی ");
+        Votes.findOne({
+            userID: u._id,
+            lessenID: lessenID
+        }, "answer").then((vs) => {
+            let answerArr = vs.answer;
+            answerArr.push({
+                value: answer
+            });
+            Votes.update({
+                userID: u._id,
+                lessenID: lessenID
+            }, {
+                answer: answerArr
+            }).then((v) => {
+                bot.sendMessage(msg, "مرسی ");
+            })
         })
     })
-
-
-
 
 });

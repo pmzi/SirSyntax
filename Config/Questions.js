@@ -4,7 +4,7 @@ module.exports = [
         options:[
             {
                 text:"هرگز حضور و غیاب نمی کند.",
-                value:0
+                value:1
             },
             {
                 text:"کمتر از نیمی از جلسات را حضور و غیاب می کند.",
@@ -25,7 +25,7 @@ module.exports = [
         options:[
             {
                 text:"هرگز",
-                value:0
+                value:1
             },
             {
                 text:"پایان فصل",
@@ -46,7 +46,7 @@ module.exports = [
         options:[
             {
                 text:"جزوه ارائه نمی دهد.",
-                value:0
+                value:1
             },
             {
                 text:"1",
@@ -75,7 +75,7 @@ module.exports = [
         options:[
             {
                 text:"0 درصد مطالب",
-                value:0
+                value:1
             },
             {
                 text:"کم تر از 25 درصد مطالب",
@@ -104,7 +104,7 @@ module.exports = [
         options:[
             {
                 text:"خیلی کمتر از حد انتظار ",
-                value:0
+                value:1
             },
             {
                 text:"کمتراز حد انتظار ",
