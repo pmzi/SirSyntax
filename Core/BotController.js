@@ -515,9 +515,10 @@ bot.addCallBack("cb_lessen_v", /^lessen-v-([\d\w]+)$/i, (data, msg) => {
         chatID: msg.chat.id
     }).then((u) => {
         Votes.findOne({
-            userID: u._id
+            userID: u._id,
+            lessenID:lessenID
         }).then((v) => {
-            if (!v || v.length != 0) {
+            if (v == null) {
                 let up = {
                     lessenID: lessenID
                 }
